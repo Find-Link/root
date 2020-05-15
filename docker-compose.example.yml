@@ -1,0 +1,47 @@
+version: '3.8'
+services:
+  nginx:
+    restart: always
+    image: hitko/nginx-pagespeed
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - //d/web/projects/find-link/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - //d/web/projects/find-link/nginx/cert:/etc/nginx/cert
+    depends_on:
+      - endpoint
+      - client
+    logging:
+      driver: none
+  redis:
+    image: redis:alpine
+  client:
+    build:
+      dockerfile: Dockerfile
+      context: ./client
+    env_file:
+      - ./client/.env
+    volumes:
+      - /client/node_modules
+      - //d/web/projects/find-link/client:/client
+    ports:
+      - 3000:3000
+      - 9228:9228
+    command: ["npm", "run", "dev"]
+  endpoint:
+    build:
+      dockerfile: Dockerfile
+      context: ./endpoint
+    env_file:
+      - ./endpoint/.env
+    volumes:
+      - /endpoint/node_modules
+      - /endpoint/sh
+      - //d/web/projects/find-link/endpoint:/endpoint
+    depends_on:
+      - redis
+    ports:
+      - 3001:3001
+      - 9229:9229
+    command: ["npm", "run", "dev"]
